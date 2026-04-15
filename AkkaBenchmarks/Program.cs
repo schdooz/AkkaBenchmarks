@@ -87,6 +87,8 @@ akka {
     [Benchmark]
     public void Persist1000Events() => PersistEvents(1000, 1);
 
+    [Benchmark]
+    public void Persist10000Events() => PersistEvents(10000, 1);
 
     private void PersistEvents(int numberOfActors, int numberOfEvents)
     {
@@ -120,9 +122,9 @@ internal static class Program
 }
 
 /*
- 
-| Method            | Mean      | Error    | StdDev    |
-|------------------ |----------:|---------:|----------:|
-| Persist100Events  |  28.08 ms | 0.558 ms |  0.685 ms |
-| Persist1000Events | 286.68 ms | 5.346 ms | 13.412 ms |
+| Method             | Mean        | Error     | StdDev    |
+|------------------- |------------:|----------:|----------:|
+| Persist100Events   |    27.90 ms |  0.527 ms |  0.627 ms |
+| Persist1000Events  |   275.67 ms |  5.572 ms | 15.898 ms |
+| Persist10000Events | 3,027.55 ms | 40.364 ms | 37.757 ms |
 */
