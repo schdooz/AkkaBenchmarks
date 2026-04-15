@@ -12,7 +12,17 @@ public class Poco
     public int IntProp { get; set; }
     public Guid GuidProp { get; set; }
     public DateTime DateProp { get; set; }
+    public required List<Poco2> ListProp { get; set; }
 }
+
+public class Poco2
+{
+    public required string StringProp { get; set; }
+    public int IntProp { get; set; }
+    public Guid GuidProp { get; set; }
+    public DateTime DateProp { get; set; }
+}
+
 
 // Persistent actor
 public class BenchmarkingPersistentActor : ReceivePersistentActor
@@ -31,7 +41,44 @@ public class BenchmarkingPersistentActor : ReceivePersistentActor
                     StringProp = "hello",
                     IntProp = 123,
                     GuidProp = Guid.NewGuid(),
-                    DateProp = DateTime.Now
+                    DateProp = DateTime.Now,
+                    ListProp = [
+                        new Poco2
+                        {
+                            StringProp = "hello",
+                            IntProp = 123,
+                            GuidProp = Guid.NewGuid(),
+                            DateProp = DateTime.Now
+                        },
+                        new Poco2
+                        {
+                            StringProp = "hello",
+                            IntProp = 123,
+                            GuidProp = Guid.NewGuid(),
+                            DateProp = DateTime.Now
+                        },
+                        new Poco2
+                        {
+                            StringProp = "hello",
+                            IntProp = 123,
+                            GuidProp = Guid.NewGuid(),
+                            DateProp = DateTime.Now
+                        },
+                        new Poco2
+                        {
+                            StringProp = "hello",
+                            IntProp = 123,
+                            GuidProp = Guid.NewGuid(),
+                            DateProp = DateTime.Now
+                        },
+                        new Poco2
+                        {
+                            StringProp = "hello",
+                            IntProp = 123,
+                            GuidProp = Guid.NewGuid(),
+                            DateProp = DateTime.Now
+                        }
+                    ]
                 },
                 _ => { });
 
