@@ -4,6 +4,7 @@ using Akka.Persistence;
 using Akka.Persistence.MongoDb;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using System.Collections.Concurrent;
 
 // Test Poco used by Hyperion benchmarks
 public class Poco
@@ -27,71 +28,76 @@ public class Poco2
 // Persistent actor
 public class BenchmarkingPersistentActor : ReceivePersistentActor
 {
-    private readonly List<string> _items = new();
+    private static Poco s_Event = new Poco
+    {
+        StringProp = "hello",
+        IntProp = 123,
+        GuidProp = Guid.NewGuid(),
+        DateProp = DateTime.Now,
+        ListProp = [
+            new Poco2
+            {
+                StringProp = "hello",
+                IntProp = 123,
+                GuidProp = Guid.NewGuid(),
+                DateProp = DateTime.Now
+            },
+            new Poco2
+            {
+                StringProp = "hello",
+                IntProp = 123,
+                GuidProp = Guid.NewGuid(),
+                DateProp = DateTime.Now
+            },
+            new Poco2
+            {
+                StringProp = "hello",
+                IntProp = 123,
+                GuidProp = Guid.NewGuid(),
+                DateProp = DateTime.Now
+            },
+            new Poco2
+            {
+                StringProp = "hello",
+                IntProp = 123,
+                GuidProp = Guid.NewGuid(),
+                DateProp = DateTime.Now
+            },
+            new Poco2
+            {
+                StringProp = "hello",
+                IntProp = 123,
+                GuidProp = Guid.NewGuid(),
+                DateProp = DateTime.Now
+            }]
+    };
+
+    private ConcurrentBag<IActorRef> _initializedActors;
+
+    public BenchmarkingPersistentActor(ConcurrentBag<IActorRef> initializedActors)
+    {
+        _initializedActors = initializedActors;
+
+        this.Command<string>(s =>
+        {
+            Persist(s_Event, _ => { });
+
+            Context.Sender.Tell(s);
+        });
+    }
 
     public override string PersistenceId => $"BenchmarkingPersistentActor_{Guid.NewGuid()}";
 
-    public BenchmarkingPersistentActor()
+    protected override void OnReplaySuccess()
     {
-        this.Command<string>(s =>
-        {
-            Persist(
-                new Poco
-                {
-                    StringProp = "hello",
-                    IntProp = 123,
-                    GuidProp = Guid.NewGuid(),
-                    DateProp = DateTime.Now,
-                    ListProp = [
-                        new Poco2
-                        {
-                            StringProp = "hello",
-                            IntProp = 123,
-                            GuidProp = Guid.NewGuid(),
-                            DateProp = DateTime.Now
-                        },
-                        new Poco2
-                        {
-                            StringProp = "hello",
-                            IntProp = 123,
-                            GuidProp = Guid.NewGuid(),
-                            DateProp = DateTime.Now
-                        },
-                        new Poco2
-                        {
-                            StringProp = "hello",
-                            IntProp = 123,
-                            GuidProp = Guid.NewGuid(),
-                            DateProp = DateTime.Now
-                        },
-                        new Poco2
-                        {
-                            StringProp = "hello",
-                            IntProp = 123,
-                            GuidProp = Guid.NewGuid(),
-                            DateProp = DateTime.Now
-                        },
-                        new Poco2
-                        {
-                            StringProp = "hello",
-                            IntProp = 123,
-                            GuidProp = Guid.NewGuid(),
-                            DateProp = DateTime.Now
-                        }
-                    ]
-                },
-                _ => { });
-
-            Context.Sender.Tell(s);
-       });
+        base.OnReplaySuccess();
+        _initializedActors.Add(Self);
     }
-
-    
 }
 
 public class BenchmarkClass
 {
-    ActorSystem _actorSystem;
+    readonly List<IActorRef> _actors = [];
 
     public BenchmarkClass()
     {
@@ -102,7 +108,7 @@ akka {
       plugin = ""akka.persistence.journal.mongodb""
       mongodb {
         class = ""Akka.Persistence.MongoDb.Journal.MongoDbJournal, Akka.Persistence.MongoDb""
-        connection-string = ""mongodb://localhost:27017/akka-benchmark""
+        connection-string = ""mongodb://localhost:27017/akka-benchmark?maxPoolSize=10010&maxConnecting=10010""
         collection = ""EventJournal""
         auto-initialize = on
       }
@@ -112,7 +118,7 @@ akka {
       plugin = ""akka.persistence.snapshot-store.mongodb""
       mongodb {
         class = ""Akka.Persistence.MongoDb.Snapshot.MongoDbSnapshotStore, Akka.Persistence.MongoDb""
-        connection-string = ""mongodb://localhost:27017/akka-benchmark""
+        connection-string = ""mongodb://localhost:27017/akka-benchmark?maxPoolSize=10010&maxConnecting=10010""
         collection = ""SnapshotStore""
         auto-initialize = on
       }
@@ -120,43 +126,43 @@ akka {
   }
 }");
 
-        var system = ActorSystem.Create("AkkaBenchmarks", config);
+        var actorSystem = ActorSystem.Create("AkkaBenchmarks", config);
+        MongoDbPersistence.Get(actorSystem);
 
-        // Initialize MongoDB persistence plugin
-        MongoDbPersistence.Get(system);
-
-        _actorSystem = system;
-    }
-
-    [Benchmark]
-    public void Persist100Events() => PersistEvents(100, 1);
-
-    [Benchmark]
-    public void Persist1000Events() => PersistEvents(1000, 1);
-
-    [Benchmark]
-    public void Persist10000Events() => PersistEvents(10000, 1);
-
-    private void PersistEvents(int numberOfActors, int numberOfEvents)
-    {
-        var actors = new List<IActorRef>();
+        var initializedActors = new ConcurrentBag<IActorRef>();
+        var numberOfActors = 10000;
 
         for (int i = 0; i < numberOfActors; i++)
         {
-            actors.Add(_actorSystem.ActorOf(Props.Create(() => new BenchmarkingPersistentActor()), Guid.NewGuid().ToString()));
+            _actors.Add(actorSystem.ActorOf(Props.Create(() => new BenchmarkingPersistentActor(initializedActors)), Guid.NewGuid().ToString()));
         }
 
+        while (initializedActors.Count < numberOfActors)
+        {
+            Task.Delay(1000).Wait();
+        }
+    }
+
+    [Benchmark]
+    public void Persist100Events() => PersistEvents(100);
+
+    [Benchmark]
+    public void Persist1000Events() => PersistEvents(1000);
+
+    [Benchmark]
+    public void Persist10000Events() => PersistEvents(10000);
+
+    private void PersistEvents(int numberOfEvents)
+    {
         var persistTasks = new List<Task>();
 
-        foreach (var actor in actors)
+        for (int i = 0; i < numberOfEvents; i++)
         {
-            for (int i = 0; i < numberOfEvents; i++)
-            {
-                persistTasks.Add(actor.Ask(string.Empty));
-            }
+            var actor = _actors[i];
+            persistTasks.Add(actor.Ask(string.Empty));
         }
 
-        Task.WaitAll(persistTasks.ToArray());
+        Task.WaitAll([.. persistTasks]);
     }
 }
 
