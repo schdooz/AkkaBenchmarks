@@ -173,11 +173,3 @@ internal static class Program
         var summary = BenchmarkRunner.Run(typeof(Program).Assembly);
     }
 }
-
-/*
-| Method             | Mean        | Error     | StdDev    |
-|------------------- |------------:|----------:|----------:|
-| Persist100Events   |    13.27 ms |  0.260 ms |  0.373 ms |
-| Persist1000Events  |   133.60 ms |  1.587 ms |  1.484 ms |
-| Persist10000Events | 1,445.69 ms | 25.790 ms | 22.862 ms |
-*/
