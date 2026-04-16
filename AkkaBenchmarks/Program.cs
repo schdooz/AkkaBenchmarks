@@ -177,7 +177,7 @@ internal static class Program
 /*
 | Method             | Mean        | Error     | StdDev    |
 |------------------- |------------:|----------:|----------:|
-| Persist100Events   |    27.90 ms |  0.527 ms |  0.627 ms |
-| Persist1000Events  |   275.67 ms |  5.572 ms | 15.898 ms |
-| Persist10000Events | 3,027.55 ms | 40.364 ms | 37.757 ms |
+| Persist100Events   |    13.27 ms |  0.260 ms |  0.373 ms |
+| Persist1000Events  |   133.60 ms |  1.587 ms |  1.484 ms |
+| Persist10000Events | 1,445.69 ms | 25.790 ms | 22.862 ms |
 */
