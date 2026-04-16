@@ -6,7 +6,6 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using System.Collections.Concurrent;
 
-// Test Poco used by Hyperion benchmarks
 public class Poco
 {
     public required string StringProp { get; set; }
@@ -24,8 +23,6 @@ public class Poco2
     public DateTime DateProp { get; set; }
 }
 
-
-// Persistent actor
 public class BenchmarkingPersistentActor : ReceivePersistentActor
 {
     private static Poco s_Event = new Poco
