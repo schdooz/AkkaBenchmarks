@@ -77,9 +77,7 @@ public class BenchmarkingPersistentActor : ReceivePersistentActor
 
         this.Command<string>(s =>
         {
-            Persist(s_Event, _ => { });
-
-            Context.Sender.Tell(s);
+            Persist(s_Event, _ => { Context.Sender.Tell(s); });
         });
     }
 
